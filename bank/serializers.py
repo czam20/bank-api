@@ -2,6 +2,7 @@ import traceback
 from rest_framework import serializers
 from .models import Account, Transaction
 
+
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
@@ -17,38 +18,24 @@ class AccountSerializer(serializers.ModelSerializer):
                 'id': instance.person.id,
                 'fullname': instance.person.fullname
             }
-       }
+        }
+
 
 class TransactionSerializer(serializers.ModelSerializer):
+    accounts = AccountSerializer(read_only=True, many=True)
+
     class Meta:
         model = Transaction
-        fields = ('id', 'transaction_type', 'amount', 'description', 'accounts')
+        fields = ('id', 'transaction_type', 'amount',
+                  'description', 'accounts')
         read_only_fields = ('id',)
 
-    def create(self, validated_data):
-        # update account amount
-        accountId = validated_data['accounts'].id
-        account = Account.objects.filter(id = accountId).first()
-        if validated_data['transaction_type'] == 'Deposit':
-            account.amount += validated_data['amount']
+    def validate(self, data):
+        account = data['accounts'][0]
 
-        if validated_data['transaction_type'] == 'Withdrawal':
-            account.amount -= validated_data['amount']
+        if data['transaction_type'] == 'Withdrawal' or data['transaction_type'] == 'Transfer':
+            if account.amount < data['amount']:
+                raise serializers.ValidationError(
+                    "You don't have enough money to carry out this transaction")
 
-        Account.objects.filter(id = accountId).update(amount = account.amount)
-           
-        return super().create(validated_data)
-
-    def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'transaction_type': instance.transaction_type,
-            'amount': instance.amount,
-            'description': instance.description,
-            'accounts': {
-                'id': instance.accounts.id,
-                'account_number': instance.accounts.account_number,
-                'ownerId': instance.accounts.person.id,
-                'ownerFullname': instance.accounts.person.fullname
-            }
-       }
+        return data
