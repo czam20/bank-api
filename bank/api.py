@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
+from .utils import modifyAccountAmount
 
 
 class AccountViewSet(viewsets.ModelViewSet):
@@ -23,23 +24,24 @@ class TransactionViewSet(viewsets.ModelViewSet):
         accountId = requestData.pop('account')
         data = {
             **requestData,
-            "accounts": [accountId]
+            "accountsId": [accountId]
         }
 
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             # update account amount
             account = Account.objects.filter(id=accountId).first()
-            if requestData['transaction_type'] == 'Deposit':
-                account.amount += requestData['amount']
+            newAmount = modifyAccountAmount(
+                account.amount, requestData['amount'], requestData['transaction_type'])
+            accountSerializer = AccountSerializer(
+                account, data={'amount': newAmount}, partial=True)
 
-            if requestData['transaction_type'] == 'Withdrawal':
-                account.amount -= requestData['amount']
+            if accountSerializer.is_valid():
+                serializer.save()
+                accountSerializer.save()
+                return Response({'message': 'Transaction completed successfully!', 'transaction': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response(accountSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            Account.objects.filter(id=accountId).update(amount=account.amount)
-
-            serializer.save()
-            return Response({'message': 'Transaction completed successfully!'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post',])
@@ -49,7 +51,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         receiverAccountId = requestData.pop('receiver_account')
         data = {
             **requestData,
-            "accounts": [senderAccountId, receiverAccountId],
+            "accountsId": [senderAccountId, receiverAccountId],
             "transaction_type": "Transfer"
         }
 
@@ -57,16 +59,24 @@ class TransactionViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             # update accounts amount
             senderAccount = Account.objects.filter(id=senderAccountId).first()
-            senderAccount.amount -= requestData['amount']
-            Account.objects.filter(id=senderAccountId).update(
-                amount=senderAccount.amount)
+            newSenderAccountAmount = modifyAccountAmount(
+                senderAccount.amount, requestData['amount'], 'Withdrawal')
+            senderAccountSerializer = AccountSerializer(
+                senderAccount, data={'amount': newSenderAccountAmount}, partial=True)
 
             receiverAccount = Account.objects.filter(
                 id=receiverAccountId).first()
-            receiverAccount.amount += requestData['amount']
-            Account.objects.filter(id=receiverAccountId).update(
-                amount=receiverAccount.amount)
+            newReceiverAccountAmount = modifyAccountAmount(
+                receiverAccount.amount, requestData['amount'], 'Deposit')
+            receiverAccountSerializer = AccountSerializer(
+                receiverAccount, data={'amount': newReceiverAccountAmount}, partial=True)
 
-            serializer.save()
-            return Response({'message': 'Transfer completed successfully!'}, status=status.HTTP_201_CREATED)
+            if senderAccountSerializer.is_valid():
+                if receiverAccountSerializer.is_valid():
+                    serializer.save()
+                    senderAccountSerializer.save()
+                    receiverAccountSerializer.save()
+                    return Response({'message': 'Transfer completed successfully!', 'transaction': serializer.data}, status=status.HTTP_201_CREATED)
+                return Response(receiverAccountSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(senderAccountSerializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

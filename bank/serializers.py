@@ -23,14 +23,17 @@ class AccountSerializer(serializers.ModelSerializer):
 
 class TransactionSerializer(serializers.ModelSerializer):
     accounts = AccountSerializer(read_only=True, many=True)
+    accountsId = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(), many=True, write_only=True, source='accounts')
 
     class Meta:
         model = Transaction
         fields = ('id', 'transaction_type', 'amount',
-                  'description', 'accounts')
-        read_only_fields = ('id',)
+                  'description', 'accounts', 'accountsId')
+        read_only_fields = ('id', )
 
     def validate(self, data):
+        print(data)
         account = data['accounts'][0]
 
         if data['transaction_type'] == 'Withdrawal' or data['transaction_type'] == 'Transfer':
