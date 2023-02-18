@@ -1,23 +1,51 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
 from .utils import modifyAccountAmount
+from persons.models import Person
 
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = Account.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = AccountSerializer
+    http_method_names = ['get', 'post', 'head', 'options']
+
+    @action(detail=True, methods=['get'])
+    def get_accounts_by_user(self, request, user_id):
+        user = Person.objects.filter(id=user_id)
+        if user:
+            queryset = self.filter_queryset(
+                Account.objects.filter(person=user_id))
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response({'message': "User doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = TransactionSerializer
+    http_method_names = ['get', 'post', 'head', 'options']
 
-    @action(detail=True, methods=['post',])
+    @action(detail=True, methods=['get'])
+    def get_transactions_by_account(self, request, account_id):
+        account = Account.objects.filter(id=account_id)
+        if account:
+            queryset = Transaction.objects.filter(accounts=account_id)
+            serializer = self.serializer_class(queryset, many=True)
+            return Response({'transactions': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'message': "Account doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['get'])
+    def get_transactions_by_type(self, request, type):
+        queryset = Transaction.objects.filter(transaction_type=type)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'transactions': serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
     def make_deposit_or_withdrawal(self, request):
         requestData = request.data
 
@@ -44,7 +72,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post',])
+    @action(detail=True, methods=['post'])
     def make_transfer(self, request):
         requestData = request.data
         senderAccountId = requestData.pop('sender_account')
