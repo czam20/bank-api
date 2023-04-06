@@ -67,7 +67,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 account.amount = newAmount
                 account.save()
                 serializer.save()
-                return Response({'message': 'Transaction completed successfully!', 'transaction': serializer.data}, status=status.HTTP_201_CREATED)
+                return Response({'message': 'Transaction completed successfully!'}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # def make_deposit_or_withdrawal(self, request):

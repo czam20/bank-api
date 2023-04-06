@@ -77,13 +77,24 @@ WSGI_APPLICATION = 'myBank.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': config('DB_NAME'),
+#         'USER': config('DB_USER'),
+#         'PASSWORD': config('DB_PASSWORD'),
+#         'PORT': config('DB_PORT')
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'djongo',
         'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'PORT': config('DB_PORT')
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+            'host': config("MONGO_HOST"),
+        }
     }
 }
 

@@ -1,4 +1,3 @@
-import traceback
 from rest_framework import serializers
 from .models import Account, Transaction
 
@@ -13,7 +12,7 @@ class AccountSerializer(serializers.ModelSerializer):
         return {
             'id': instance.id,
             'account_number': instance.account_number,
-            'amount': instance.amount,
+            'amount': float(instance.amount.to_decimal()),
             'person': {
                 'id': instance.person.id,
                 'fullname': instance.person.fullname
@@ -33,11 +32,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', )
 
     def validate(self, data):
-        print(data)
+        # print(data)
         account = data['accounts'][0]
 
         if data['transaction_type'] == 'Withdrawal' or data['transaction_type'] == 'Transfer':
-            if account.amount < data['amount']:
+            if float(account.amount.to_decimal()) < data['amount']:
                 raise serializers.ValidationError(
                     "You don't have enough money to carry out this transaction")
 

@@ -1,7 +1,11 @@
+from bson.decimal128 import Decimal128
+import decimal
+
 def modifyAccountAmount(accountAmount, transactionAmount, transactionType):
     if transactionType == 'Deposit':
-        accountAmount += transactionAmount
+        newAccountAmount = Decimal128(accountAmount.to_decimal() + decimal.Decimal(transactionAmount))
     elif transactionType == 'Withdrawal':
-        accountAmount -= transactionAmount
+        newAccountAmount = Decimal128(accountAmount.to_decimal() - decimal.Decimal(transactionAmount))
 
-    return accountAmount
+    return float(newAccountAmount.to_decimal())
+
