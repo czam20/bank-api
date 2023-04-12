@@ -1,23 +1,28 @@
 from rest_framework import serializers
 from .models import Account, Transaction
+from persons.serializers import PersonSerializer
+from persons.models import Person
 
 
 class AccountSerializer(serializers.ModelSerializer):
+    person = PersonSerializer(read_only=True)
+    personId = serializers.PrimaryKeyRelatedField(
+        queryset=Person.objects.all(), write_only=True, source='person')
     class Meta:
         model = Account
-        fields = ('id', 'account_number', 'amount', 'person')
+        fields = ('id', 'account_number', 'amount', 'person', 'personId')
         read_only_fields = ('id',)
 
-    def to_representation(self, instance):
-        return {
-            'id': instance.id,
-            'account_number': instance.account_number,
-            'amount': float(instance.amount.to_decimal()),
-            'person': {
-                'id': instance.person.id,
-                'fullname': instance.person.fullname
-            }
-        }
+    # def to_representation(self, instance):
+    #     return {
+    #         'id': instance.id,
+    #         'account_number': instance.account_number,
+    #         'amount': float(instance.amount.to_decimal()),
+    #         'person': {
+    #             'id': instance.person.id,
+    #             'fullname': instance.person.fullname
+    #         }
+    #     }
 
 
 class TransactionSerializer(serializers.ModelSerializer):

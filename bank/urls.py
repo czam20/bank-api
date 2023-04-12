@@ -17,6 +17,6 @@ urlpatterns = [
         {'get': 'get_transactions_by_type'}), name='get_transactions_by_type'),
     path('api/accounts/<int:account_id>/transactions', TransactionViewSet.as_view(
         {'get': 'get_transactions_by_account'}), name='get_transactions_by_account'),
-    path('api/users/<int:user_id>/accounts', AccountViewSet.as_view(
+    path('api/users/<int:user_dni>/accounts', AccountViewSet.as_view(
         {'get': 'get_accounts_by_user'}), name='get_accounts_by_user'),
 ] + router.urls

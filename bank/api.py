@@ -15,14 +15,17 @@ class AccountViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'head', 'options']
 
     @action(detail=True, methods=['get'])
-    def get_accounts_by_user(self, request, user_id):
-        user = Person.objects.filter(id=user_id)
-        if user:
-            queryset = self.filter_queryset(
-                Account.objects.filter(person=user_id))
-            serializer = self.serializer_class(queryset, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response({'message': "User doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+    def get_accounts_by_user(self, request, user_dni):
+        try:
+            user = Person.objects.get(dni=user_dni)
+            print(user.id)
+            if user:
+                queryset = self.filter_queryset(
+                    Account.objects.filter(person=user.id))
+                serializer = self.serializer_class(queryset, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+        except:
+            return Response({'message': "User doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
@@ -33,12 +36,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def get_transactions_by_account(self, request, account_id):
-        account = Account.objects.filter(id=account_id)
-        if account:
-            queryset = Transaction.objects.filter(accounts=account_id)
-            serializer = self.serializer_class(queryset, many=True)
-            return Response({'transactions': serializer.data}, status=status.HTTP_200_OK)
-        return Response({'message': "Account doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            account = Account.objects.filter(id=account_id)
+            if account:
+                queryset = Transaction.objects.filter(accounts=account_id)
+                serializer = self.serializer_class(queryset, many=True)
+                return Response({'transactions': serializer.data}, status=status.HTTP_200_OK)
+        except:
+            return Response({'message': "Account doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=True, methods=['get'])
     def get_transactions_by_type(self, request, type):
