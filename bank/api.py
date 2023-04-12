@@ -68,11 +68,11 @@ class TransactionViewSet(viewsets.ModelViewSet):
             if serializer.is_valid():
                 # update account amount 
                 newAmount = modifyAccountAmount(
-                    account.amount, requestData['amount'], requestData['transaction_type'])
-                account.amount = newAmount
+                    account.balance, requestData['amount'], requestData['transaction_type'])
+                account.balance = newAmount
                 account.save()
                 serializer.save()
-                return Response({'message': 'Transaction completed successfully!'}, status=status.HTTP_201_CREATED)
+                return Response({'message': 'Transaction completed successfully!', 'transaction': serializer.data}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     # def make_deposit_or_withdrawal(self, request):
@@ -109,13 +109,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
             if serializer.is_valid():
                 # update accounts amount
                 newSenderAccountAmount = modifyAccountAmount(
-                    senderAccount.amount, requestData['amount'], 'Withdrawal')
-                senderAccount.amount = newSenderAccountAmount
+                    senderAccount.balance, requestData['amount'], 'Withdrawal')
+                senderAccount.balance = newSenderAccountAmount
                 senderAccount.save()
 
                 newReceiverAccountAmount = modifyAccountAmount(
-                    receiverAccount.amount, requestData['amount'], 'Deposit')
-                receiverAccount.amount = newReceiverAccountAmount
+                    receiverAccount.balance, requestData['amount'], 'Deposit')
+                receiverAccount.balance = newReceiverAccountAmount
                 receiverAccount.save()
                 serializer.save()
                 return Response({'message': 'Transfer completed successfully!', 'transaction': serializer.data}, status=status.HTTP_201_CREATED)

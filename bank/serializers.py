@@ -8,16 +8,18 @@ class AccountSerializer(serializers.ModelSerializer):
     person = PersonSerializer(read_only=True)
     personId = serializers.PrimaryKeyRelatedField(
         queryset=Person.objects.all(), write_only=True, source='person')
+
     class Meta:
         model = Account
-        fields = ('id', 'account_number', 'amount', 'person', 'personId')
-        read_only_fields = ('id',)
+        fields = ('id', 'account_number', 'balance',
+                  'person', 'personId', 'created_at')
+        read_only_fields = ('id', 'created_at')
 
     # def to_representation(self, instance):
     #     return {
     #         'id': instance.id,
     #         'account_number': instance.account_number,
-    #         'amount': float(instance.amount.to_decimal()),
+    #         'amount': float(instance.balance.to_decimal()),
     #         'person': {
     #             'id': instance.person.id,
     #             'fullname': instance.person.fullname
@@ -33,15 +35,15 @@ class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ('id', 'transaction_type', 'amount',
-                  'description', 'accounts', 'accountsId')
-        read_only_fields = ('id', )
+                  'description', 'accounts', 'accountsId', 'date')
+        read_only_fields = ('id', 'date')
 
     def validate(self, data):
         # print(data)
         account = data['accounts'][0]
 
         if data['transaction_type'] == 'Withdrawal' or data['transaction_type'] == 'Transfer':
-            if float(account.amount.to_decimal()) < data['amount']:
+            if float(account.balance.to_decimal()) < data['amount']:
                 raise serializers.ValidationError(
                     "You don't have enough money to carry out this transaction")
 
